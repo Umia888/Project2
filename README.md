@@ -1,4 +1,4 @@
-# laws90286-ID1737854-assignment2
+# Project2
 # 🧾 AI Contract Clause Builder
 
 A Streamlit application that **automatically drafts, reviews, and refines legal contract clauses** based on user-defined objectives, jurisdiction, and uploaded legal references.
