@@ -6,8 +6,6 @@ A Streamlit application that **automatically drafts, reviews, and refines legal 
 👉 **Live Demo:** [Streamlit Cloud App](https://miaproject2.streamlit.app/)
 
 ---
-基于法律行业用户制作简单合同文书的时间成本痛点，和非法律行业用户对便宜简单法律文书的需求痛点，制作的AI合同拟制助手。它的功能是依据用户输入的需求和相关法域，写出可下载的文本格式的法律文书。这是一个0-1的AI实践项目，我主要参与了用户的需求调研、产品框架设计、核心功能搭建与网页部署。早期是个人拉动深圳的初创企业作为技术支持，参与“互联网+”国家级比赛并获得省级铜奖。后来，自己从0通过vibe coding，接入API并进行模型预训练，实现87%的结果准召和50%的效率提升，并搭建前端网页。
-
 ## 🚀 Application Overview
 
 This app allows users to:
