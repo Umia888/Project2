@@ -3,3 +3,4 @@ pyarrow
 openai
 python-dotenv
 python-docx
+langchain-text-splitters>=0.2.0

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --cookie-monster-blue: #0062ad;
+      --cream-background: #fbf0dc;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      font-family: Inter, system-ui, -apple-system, sans-serif;
+    }
+    .card {
+      background: var(--cream-background);
+      width: 100%;
+      max-width: 458px;
+      margin: 0 auto;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .monster {
+      background: var(--cookie-monster-blue);
+      height: 432px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .eyes-row {
+      display: flex;
+      flex-direction: row;
+      gap: 4px;
+      align-items: center;
+      justify-content: center;
+      padding: 117px 22px;
+    }
+    .eye {
+      position: relative;
+      width: 204px;
+      height: 204px;
+      border-radius: 50%;
+      background: var(--cream-background);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .pupil-wrap {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 76px;
+      height: 76px;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+    .pupil-circle {
+      position: absolute;
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: #000;
+      top: 50%;
+      left: 50%;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="monster">
+      <div class="eyes-row">
+        <div class="eye" id="eyeL" data-right="0"></div>
+        <div class="eye" id="eyeR" data-right="1"></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var EYE_STATE = __EYE_STATE__;
+
+      var defaults = {
+        0: { x: 74.8272 - 102, y: 78.3184 - 102 },
+        1: { x: 119.032 - 102, y: 117.787 - 102 },
+      };
+
+      /**
+       * 将浏览器视口坐标转为当前 iframe 文档视口坐标（支持多层嵌套 iframe），
+       * 与眼白 getBoundingClientRect() 所用坐标系一致。
+       */
+      function viewportToLocalViewport(clientX, clientY) {
+        var x = clientX;
+        var y = clientY;
+        var cur = window;
+        try {
+          while (cur !== cur.top) {
+            var fe = cur.frameElement;
+            if (!fe) break;
+            var fr = fe.getBoundingClientRect();
+            x -= fr.left;
+            y -= fr.top;
+            cur = cur.parent;
+          }
+        } catch (err) {
+          return { x: clientX, y: clientY };
+        }
+        return { x: x, y: y };
+      }
+
+      var eyeUpdaters = [];
+      var globalMouseBound = false;
+
+      function bindGlobalMouseMove() {
+        if (globalMouseBound) return;
+        globalMouseBound = true;
+        var target = window;
+        try {
+          if (window.top && window.top !== window) {
+            target = window.top;
+          }
+        } catch (e) {}
+        target.addEventListener("mousemove", function (e) {
+          if (EYE_STATE !== "normal") return;
+          var p = viewportToLocalViewport(e.clientX, e.clientY);
+          for (var i = 0; i < eyeUpdaters.length; i++) {
+            eyeUpdaters[i](p.x, p.y);
+          }
+        });
+      }
+
+      function renderSpecial(eyeEl, isRight, state) {
+        var def = defaults[isRight ? 1 : 0];
+        var wrap = document.createElement("div");
+        wrap.className = "pupil-wrap";
+        wrap.style.transform =
+          "translate(-50%, -50%) translate(" + def.x + "px, " + def.y + "px)";
+
+        if (state === "correct") {
+          wrap.innerHTML =
+            '<svg width="60" height="60" viewBox="0 0 24 24" fill="#FF69B4" style="display:block;margin:auto;margin-top:8px"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>';
+          eyeEl.innerHTML = "";
+          eyeEl.appendChild(wrap);
+          return;
+        }
+        if (state === "wrong") {
+          wrap.innerHTML =
+            '<svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" style="display:block;margin:auto;margin-top:8px"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>';
+          eyeEl.innerHTML = "";
+          eyeEl.appendChild(wrap);
+          if (!window.__eyesWrongResetScheduled) {
+            window.__eyesWrongResetScheduled = true;
+            setTimeout(function () {
+              window.__eyesWrongResetScheduled = false;
+              EYE_STATE = "normal";
+              eyeUpdaters.length = 0;
+              initEye(document.getElementById("eyeL"), false);
+              initEye(document.getElementById("eyeR"), true);
+            }, 1000);
+          }
+          return;
+        }
+      }
+
+      function initEye(eyeEl, isRight) {
+        var def = defaults[isRight ? 1 : 0];
+        var pupilPos = { x: def.x, y: def.y };
+        var pupilRadius = 38;
+        var state = EYE_STATE;
+
+        function drawNormal() {
+          eyeEl.innerHTML = "";
+          var wrap = document.createElement("div");
+          wrap.className = "pupil-wrap";
+          var circle = document.createElement("div");
+          circle.className = "pupil-circle";
+          wrap.appendChild(circle);
+          eyeEl.appendChild(wrap);
+          function applyTransform() {
+            wrap.style.transform =
+              "translate(-50%, -50%) translate(" +
+              pupilPos.x +
+              "px, " +
+              pupilPos.y +
+              "px)";
+          }
+          applyTransform();
+
+          function updateFromLocalPoint(localX, localY) {
+            var rect = eyeEl.getBoundingClientRect();
+            var cx = rect.left + rect.width / 2;
+            var cy = rect.top + rect.height / 2;
+            var dx = localX - cx;
+            var dy = localY - cy;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            var eyeRadius = rect.width / 2;
+            var maxMovement = eyeRadius - pupilRadius - 5;
+            if (dist < 1) {
+              pupilPos = { x: def.x, y: def.y };
+              applyTransform();
+              return;
+            }
+            var nx = dx / dist;
+            var ny = dy / dist;
+            var moveX = Math.min(dist, maxMovement) * nx + def.x;
+            var moveY = Math.min(dist, maxMovement) * ny + def.y;
+            var odx = moveX - def.x;
+            var ody = moveY - def.y;
+            var td = Math.sqrt(odx * odx + ody * ody);
+            if (td > maxMovement) {
+              var sc = maxMovement / td;
+              moveX = def.x + odx * sc;
+              moveY = def.y + ody * sc;
+            }
+            pupilPos = { x: moveX, y: moveY };
+            applyTransform();
+          }
+          eyeUpdaters.push(updateFromLocalPoint);
+        }
+
+        if (state === "normal") {
+          drawNormal();
+        } else {
+          renderSpecial(eyeEl, isRight, state);
+        }
+      }
+
+      var L = document.getElementById("eyeL");
+      var R = document.getElementById("eyeR");
+      initEye(L, false);
+      initEye(R, true);
+      bindGlobalMouseMove();
+    })();
+  </script>
+</body>
+</html>

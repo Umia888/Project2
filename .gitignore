@@ -137,6 +137,9 @@ celerybeat.pid
 # Environments
 .env
 .envrc
+
+# 本地 API Key 与门禁密码（见 secrets_ai_contract_app/credentials.env.example）
+secrets_ai_contract_app/credentials.env
 .venv
 env/
 venv/
@@ -205,3 +208,12 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Debug NDJSON mirror (session ca4d61; no secrets in payload)
+debug-ca4d61.ndjson
+
+# Local per-user conversation / upload memory (server-side)
+user_memory/
+
+# RL bandit persisted Q / counts (server-side)
+rl_rerank_bandit_state.json
